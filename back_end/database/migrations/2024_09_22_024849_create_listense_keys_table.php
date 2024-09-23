@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('hang_xe', function (Blueprint $table) {
+        Schema::create('listense_keys', function (Blueprint $table) {
             $table->id();
-            $table->string('ten_hang_xe');
+            $table->string('code', 36)->unique();
+            $table->string('url', 255)->nullable();
+            $table->string('user')->nullable();
+            $table->string('email')->nullable();
+            $table->string('product')->nullable();
             $table->timestamps();
         });
     }
@@ -23,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('hang_xe');
+        Schema::dropIfExists('listense_keys');
     }
 };
