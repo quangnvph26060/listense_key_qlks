@@ -16,10 +16,10 @@ use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
-    public function __construct() {
-    }
-    public function activate_system_submit(Request $request){
-      
+    public function __construct() {}
+    public function activate_system_submit(Request $request)
+    {
+
         $listense_key = ListenseKey::where('code', $request->code)->first();
 
         if (!$listense_key) {
@@ -36,11 +36,11 @@ class AuthController extends Controller
     }
 
 
-    public function check_listense_key(Request $request){
-        \Log::info($request->url_path);
-        if($request->url_path === $request->url){
-           
-            $listense_key = ListenseKey::where('code', $request->code)->where('url',$request->url)->first();
+    public function check_listense_key(Request $request)
+    {
+        if ($request->url_path === $request->url) {
+
+            $listense_key = ListenseKey::where('code', $request->code)->where('url', $request->url)->first();
 
             if (!$listense_key) {
                 return response()->json(['status' => 'error', 'message' => 'Listense Key not found']);
@@ -51,76 +51,59 @@ class AuthController extends Controller
     }
 
 
-
-
-
-    public function login(LoginRequest $request)
+    public function login()
+    {
+        return view('auth.login');
+    }
+    public function authenticate(LoginRequest $request)
     {
         try {
-            $credentials = $request->only('email', 'password');
-            if (Auth::attempt($credentials)) {
-                $user = User::where('email', $request->email)->first();
-                $user->tokens()->delete();
-                return response()->json([
-                    'status' => 'success',
-                    'data' => $user,
-                    'authorization' => [
-                        'token' => $user->createToken('ApiToken')->plainTextToken,
-                        'type' => 'bearer',
-                    ]
-                ]);
+            $credentials = $request->validated();
+            $remember = $request->has('remember') ? true : false;
+            if (Auth::attempt($credentials, $remember)) {
+                return redirect()->route('home')->with('success', 'Đăng nhập thành công');
             }
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Email & Password does not match with our record.',
-            ], 401);
 
+            return back()->with(['error' => 'Email hoặc mật khẩu không chính xác.'])->withInput();
         } catch (\Throwable $th) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $th->getMessage()
-            ], 500);
         }
     }
-    public function register(Request $request)
-    {
-        try {
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'ma_phan_quyen' => 1,
-            ]);
-            $user_info = KhachHang::create([
-                'email'=> $user->email,
-                'ten_khach_hang' => $user->name,
-                'so_dien_thoai' => null,
-                'dia_chi'=> null,
-                'hinh_anh' => null,
-                'ngay_sinh' => null,
-                'gplx_nguoi_dung' => null,
-                'ma_nguoi_dung'=> $user->id,
-                'gioi_tinh' => null,
-            ]);
-            return  response()->json([
-                'status'=>'success',
-                'message'=>'success',
-                'data'=>$user,
-            ]);
-        }catch (\Throwable $th) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $th->getMessage()
-            ], 500);
-        }
-    }
-    public function userProfile() {
-        return response()->json(auth()->user());
-    }
+
+
     public function logout()
     {
-        $user = User::where('id', Auth::user()->id)->first();
-        $user->tokens()->delete();
-        return response()->json(['status'=>'success','message'=>'Successfully logged out']);
+        Auth::logout();
+        session()->invalidate();
+        session()->regenerateToken();
+        return redirect()->route('auth.login')->with('success', 'Đăng xuất thành công.');
     }
 }
+
+
+ // public function authenticate(LoginRequest $request)
+    // {
+    //     try {
+    //         $credentials = $request->validated();
+    //         if (Auth::attempt($credentials)) {
+    //             $user = User::where('email', $request->email)->first();
+    //             $user->tokens()->delete();
+    //             return response()->json([
+    //                 'status' => 'success',
+    //                 'data' => $user,
+    //                 'authorization' => [
+    //                     'token' => $user->createToken('ApiToken')->plainTextToken,
+    //                     'type' => 'bearer',
+    //                 ]
+    //             ]);
+    //         }
+    //         return response()->json([
+    //             'status' => 'error',
+    //             'message' => 'Email & Password does not match with our record.',
+    //         ], 401);
+    //     } catch (\Throwable $th) {
+    //         return response()->json([
+    //             'status' => 'error',
+    //             'message' => $th->getMessage()
+    //         ], 500);
+    //     }
+    // }
